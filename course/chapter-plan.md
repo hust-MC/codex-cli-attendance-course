@@ -78,7 +78,7 @@
 
 1. 检查 Codex CLI、Python、Flask 和 SQLite 环境。
 2. 创建应用入口、数据库初始化、路由、服务和测试目录。
-3. 建立员工、打卡、请假、加班、日考勤、异常和审计七张表。
+3. 建立员工和打卡两张表。
 4. 实现员工新增、列表、详情、修改和逻辑离职。
 5. 实现上班签到、下班签出和当天记录查询。
 6. 完成一个最小页面，可以创建员工并完成签到签出。
@@ -91,6 +91,7 @@
 - `services/employee_service.py`、`services/checkin_service.py`。
 - `routes/employees.py`、`routes/checkins.py`。
 - 最小首页和打卡页面。
+- `scripts/smoke-api.sh` 接口冒烟脚本。
 - 第一版 Git 基线，供后续阶段快照和重构使用。
 - `build-log/` 下本章完整开发记录。
 
@@ -111,7 +112,7 @@
 ### 本章验收
 
 - `python3 app.py` 可以启动。
-- `python3 -m unittest discover -s tests -v` 全部通过。
+- `bash scripts/smoke-api.sh` 全部通过（单元测试挪到第五章，原因见第三章偏差说明）。
 - 可以创建员工并完成一次签到签出。
 - 重复签到返回业务错误。
 
@@ -131,6 +132,11 @@
 4. 批量生成两个模块的测试。
 5. 增加请假和加班的页面入口。
 6. 处理 Agent 生成偏差和回归问题。
+
+> 偏差说明：第 4 条的单元测试实际挪到了第五章，和 `tests/` 目录一起建。
+> 原因是 `AGENTS.md` 规范里提到的 `tests/` 目录当时还不存在，
+> 模型会绕过一个仓库里不存在的目标而不是替你补齐，详见 `build-log/ch04-agents-md/short-prompt-verify.md`。
+> 本章改用 `scripts/smoke-api.sh` 做接口层验收，32 项断言覆盖两个模块的正常流程和非法流转。
 
 ### 本章产物
 
@@ -157,7 +163,7 @@
 - 员工可以提交请假和加班。
 - 主管可以审批通过和驳回。
 - 非法状态流转返回 400。
-- 两个模块的测试全部通过。
+- 两个模块的接口断言全部通过（`bash scripts/smoke-api.sh`）。
 
 ---
 
@@ -199,6 +205,7 @@
 
 - 新任务 Prompt 不需要重复技术栈、目录和响应格式。
 - AGENTS.md 的每条关键规则都能在代码或测试中找到落点。
+- 用一条短 Prompt 跑通真实开发，模型 8 条规则全部遵守，记录见 `build-log/ch04-agents-md/short-prompt-verify.md`。
 
 ---
 
