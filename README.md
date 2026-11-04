@@ -1,60 +1,52 @@
-# Codex 课程项目工作区
+# 指尖打卡 2.0 · Codex CLI 实战案例
 
-本目录用于从零构建《AI 编程 2.0 革命：Codex CLI 终端智能体实战课》的主案例。
+《AI 编程 2.0 革命：Codex CLI 终端智能体实战课》主案例仓库。
 
-## 目录说明
+用 Codex CLI 从零构建一个可运行的考勤异常闭环平台：员工打卡 → 请假加班 → 日考勤核算 → 异常申诉 → 主管审批 → 月度报表。
 
-- `course/`：课程设计、项目确认单、录制脚本、Prompt 记录和验收清单。
-- `build-log/`：正式录制时的真实开发记录，按章节建立子目录。
-- `course/agents-md-draft.md`：AGENTS.md 草案，第四章再放入根目录使用。
-- `_archive/`：旧项目和历史预研代码，仅用于隔离保存，新项目不引用。
+技术栈刻意保持最小：Python 3.10+、Flask 3、SQLite 3、原生 HTML/CSS/JS、Python 标准库 `unittest`，不引入 ORM 和前端框架。
 
-根目录暂不放置 `AGENTS.md`，避免第二、三章自动读取第四章才讲的规范。
+## 当前进度
 
-## 当前目录
+| 章节 | 状态 | 产出 |
+|---|---|---|
+| 第二章 环境与最小可跑版 | 已完成 | 员工、签到签出、考勤工作台页面 |
+| 第三章 Agent 批量开发 | 已完成 | 请假、加班、审批流转，前端两个管理面板 |
+| 第四章 AGENTS 与上下文 | 已完成 | 根目录 `AGENTS.md` 与规范一致性核对 |
+| 第五章 五阶提示词与 TDD | 待开始 | `tests/` 单元测试与一键验收脚本 |
+| 第六章 MCP 与 Skill | 待开始 | SQLite 巡检 MCP 与自定义考勤 Skill |
+| 第七章 主案例闭环 | 待开始 | 日核算、异常、申诉、审批、月报 |
+| 第八章 遗留代码重构 | 待开始 | 规则抽取与重构前后回归对比 |
+| 第九章 多 Agent 协作 | 待开始 | 编码、测试、前端、评审四路分工 |
+| 第十章 自动化与交付 | 待开始 | 一键验证、日报、提交说明 |
 
-```text
-.
-├── README.md             # 工作区说明
-├── course/               # 课程设计、章节计划和录制素材
-├── build-log/            # 真实开发记录，按章节建立子目录
-├── app.py                # Flask 应用入口
-├── db.py                 # SQLite 初始化、建表和索引
-├── models/               # 数据模型和序列化
-├── services/             # 业务规则、状态流转和数据库访问
-├── routes/               # API 路由
-├── templates/            # 页面模板
-├── static/               # 原生 CSS 和 JavaScript
-├── scripts/              # 接口冒烟、演示数据和自动化脚本
-└── _archive/             # 旧项目和历史预研代码，不参与正式开发
-```
-
-## 当前阶段
-
-按「先把案例整个项目跑通，再回头写讲稿」的顺序推进，逐字稿最后再写。
-
-已完成：
-
-- 第二章 2.4：员工、签入签出最小后端，前端考勤工作台，记录在 `build-log/ch02-minimal/`。
-- 第三章 M1：请假、加班、审批流转，员工改为逻辑离职，前端增加两个申请与审批面板，记录在 `build-log/ch03-leaves-overtimes/`。
-- 第四章：`AGENTS.md` 落到根目录并完成规范与代码的一致性核对，记录在 `build-log/ch04-agents-md/`。
-
-录制用 Prompt 在 `course/prompts/`，每章两版：Codex CLI 版和 DeepSeek 版。
-
-下一步是第五章：补 `tests/` 单元测试和 `scripts/verify.sh` 一键验收。
-
-## 运行方式
+## 快速开始
 
 ```bash
 pip install -r requirements.txt
-python3 app.py            # 默认端口 3000，可用 PORT 环境变量覆盖
-bash scripts/smoke-api.sh # 临时数据库跑 26 项接口冒烟
+python3 app.py                  # 启动后访问 http://localhost:3000
+bash scripts/smoke-api.sh       # 26 项接口冒烟，使用临时数据库和临时端口
 ```
+
+## 目录说明
+
+| 目录 | 内容 |
+|---|---|
+| `course/` | 课程设计、项目确认单、章节计划和录制用 Prompt |
+| `course/prompts/` | 每章两版录制 Prompt：Codex CLI 版和 DeepSeek 版 |
+| `build-log/` | 真实开发记录，按章节归档，含报错和讲解点 |
+| `models/` `services/` `routes/` | 数据模型、业务服务、HTTP 路由三层结构 |
+| `templates/` `static/` | 服务端模板与原生前端资源 |
+| `scripts/` | 接口冒烟与后续演示数据、验收脚本 |
+| `AGENTS.md` | 项目级开发规范，也是 Codex 在本仓库的默认上下文 |
+
+## 两条约定
+
+- **规范进 `AGENTS.md`，业务进任务 Prompt**：稳定的工程约束不重复声明，每轮 Prompt 只写增量。
+- **记录真实过程**：每章的 Prompt、命令、报错和修复都原样保留在 `build-log/`，不补造失败。
 
 ## 核心原则
 
 - 一个项目贯穿全课，不切换案例。
 - 每章都有可运行增量，不做只讲概念的章节。
-- 每个开发阶段同步记录 Prompt、命令、执行结果、报错和修复过程。
-- 录制时可以直接复用阶段 Prompt，并使用阶段快照兜底。
-- 课程目标时长约 9 小时，硬上限 10 小时。
+- 录制时可以直接复用阶段 Prompt，并用阶段快照兜底。
