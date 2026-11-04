@@ -7,6 +7,7 @@ from db import get_db
 from models.checkin import Checkin
 from services import employee_service
 from services.errors import ServiceError
+from services.validators import clean_text
 
 
 TIME_FORMATS = (
@@ -15,6 +16,10 @@ TIME_FORMATS = (
     '%Y-%m-%d %H:%M',
     '%Y-%m-%dT%H:%M',
 )
+
+# 打卡地点和备注仅用于补充业务信息，长度上限与同类文本字段保持一致
+MAX_LOCATION_LENGTH = 100
+MAX_REMARK_LENGTH = 200
 
 
 def _parse_employee_id(value):
@@ -81,6 +86,16 @@ def create_checkin(payload, check_type):
     employee = employee_service.get_employee(employee_id)
     employee_service.ensure_employee_active(employee, '打卡')
     check_time = _parse_check_time(payload.get('check_time'))
+    location = clean_text(
+        payload.get('location'),
+        '打卡地点',
+        max_length=MAX_LOCATION_LENGTH,
+    )
+    remark = clean_text(
+        payload.get('remark'),
+        '打卡备注',
+        max_length=MAX_REMARK_LENGTH,
+    )
     work_date = check_time.date().isoformat()
 
     conn = get_db()
@@ -93,10 +108,16 @@ def create_checkin(payload, check_type):
 
         cursor = conn.execute(
             '''
-            INSERT INTO checkins (employee_id, check_type, check_time)
-            VALUES (?, ?, ?)
+            INSERT INTO checkins (employee_id, check_type, check_time, location, remark)
+            VALUES (?, ?, ?, ?, ?)
             ''',
-            (employee_id, check_type, check_time.isoformat(sep=' ')),
+            (
+                employee_id,
+                check_type,
+                check_time.isoformat(sep=' '),
+                location or None,
+                remark or None,
+            ),
         )
         conn.commit()
         row = conn.execute(

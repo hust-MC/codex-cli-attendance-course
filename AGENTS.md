@@ -84,12 +84,15 @@
 ```bash
 pip install -r requirements.txt
 python3 app.py
-bash scripts/smoke-api.sh
+bash scripts/seed-demo.py            # 重置并写入固定演示数据
+bash scripts/smoke-api.sh            # 接口冒烟
 python3 -m unittest discover -s tests -v
-bash scripts/verify.sh
+bash scripts/verify.sh               # 一键验收
 ```
 
-其中 `scripts/smoke-api.sh` 是当前可用的接口冒烟脚本，使用临时数据库和临时端口；`tests/` 和 `scripts/verify.sh` 属于第五章，尚未创建。
+其中 `scripts/smoke-api.sh` 是接口冒烟脚本，使用临时数据库和临时端口。
+`scripts/verify.sh` 依次执行语法编译、代码风格、单元测试、接口冒烟和页面可达性五组检查。
+`scripts/seed-demo.py` 生成固定演示数据，避免录制时因历史数据导致结果漂移。
 
 ## 4. 目录规范
 
@@ -364,6 +367,10 @@ open -> appealed -> approved
 - 日核算和报表类功能必须增加幂等性测试。
 - 修复 Bug 时先补回归测试，再修复实现。
 - 不允许通过删除断言、跳过测试或降低覆盖范围来让测试通过。
+- 写测试前先确认服务层函数的真实名字和签名，不要凭直觉命名。
+- 测试用例的预期必须基于真实业务规则。测试失败时先判断是实现有 Bug
+  还是断言写错，确认后再动手，不要直接改断言让它变绿。
+- 造数辅助方法统一放在 `tests/base.py`，不要在每个用例里重复写插入语句。
 - 阶段结束必须运行：
 
 ```bash

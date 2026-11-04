@@ -55,6 +55,31 @@ extract_message() {
         || printf '%s' "${RESPONSE_BODY}"
 }
 
+# 校验当前响应 data 中的字段值，支持以 records.0 形式访问列表项
+expect_data_field() {
+    local description="$1"
+    local field_path="$2"
+    local expected="$3"
+    local actual
+    actual="$(printf '%s' "${RESPONSE_BODY}" | python3 -c '
+import json
+import sys
+
+value = json.load(sys.stdin)["data"]
+for part in sys.argv[1].split("."):
+    value = value[int(part)] if isinstance(value, list) else value[part]
+print(value)
+' "${field_path}")"
+
+    if [ "${actual}" = "${expected}" ]; then
+        PASS_COUNT=$((PASS_COUNT + 1))
+        printf '  ✅ %-34s %s=%s\n' "${description}" "${field_path}" "${actual}"
+    else
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+        printf '  ❌ %-34s 期望 %s 实际 %s\n' "${description}" "${expected}" "${actual}"
+    fi
+}
+
 # 断言接口返回码符合预期
 expect() {
     local description="$1"
@@ -106,9 +131,17 @@ expect '员工详情'              200 GET  '/api/employees/1'
 expect '不存在的员工'          404 GET  '/api/employees/999'
 
 printf '\n[2/4] 打卡模块\n'
-expect '上班签到'              200 POST '/api/checkins/in'  '{"employee_id":1}'
+expect '上班签到'              200 POST '/api/checkins/in' \
+    '{"employee_id":1,"location":"总部一楼","remark":"准时到岗"}'
 expect '重复签到'              400 POST '/api/checkins/in'  '{"employee_id":1}'
+expect '下班签出'              200 POST '/api/checkins/out' \
+    '{"employee_id":1,"location":"总部一楼","remark":"完成工作"}'
+expect '重复签出'              400 POST '/api/checkins/out' '{"employee_id":1}'
 expect '查询打卡记录'          200 GET  '/api/checkins?employee_id=1'
+expect_data_field '查询返回签到地点' 'records.0.location' '总部一楼'
+expect_data_field '查询返回签到备注' 'records.0.remark' '准时到岗'
+expect_data_field '查询返回签出地点' 'records.1.location' '总部一楼'
+expect_data_field '查询返回签出备注' 'records.1.remark' '完成工作'
 
 printf '\n[3/4] 请假与加班模块\n'
 expect '提交请假'              200 POST '/api/leaves' \

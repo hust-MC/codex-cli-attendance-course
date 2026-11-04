@@ -1,0 +1,143 @@
+# 第五章原始命令与输出
+
+## 建测试基础设施
+
+```bash
+mkdir -p tests
+```
+
+## 跑全部单元测试
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+最终结果：
+
+```
+Ran 77 tests in 0.158s
+
+OK
+```
+
+## 探索测试：找出重叠审批 Bug
+
+```bash
+python3 -m unittest tests.test_bug_exploration -v
+```
+
+修复前的真实输出：
+
+```
+test_probe_overlapping_leaves_both_approved (tests.test_bug_exploration.BugExplorationTest)
+探测：两条时间重叠的请假，能不能先后都被审批通过 ... FAIL
+
+======================================================================
+FAIL: test_probe_overlapping_leaves_both_approved
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/chaodikong/Android/codex/tests/test_bug_exploration.py", line 52, in test_probe_overlapping_leaves_both_approved
+    leave_service.approve_leave(leave_b.id, {'approver': '王经理'})
+AssertionError: ServiceError not raised
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.018s
+
+FAILED (failures=1)
+```
+
+## 红灯：回归用例先写好
+
+```bash
+python3 -m unittest tests.test_leave_service.LeaveServiceTest.test_approve_leave_conflict_with_approved_blocked -v
+```
+
+修复前：
+
+```
+FAIL: test_approve_leave_conflict_with_approved_blocked
+审批时与已审批请假冲突必须被拒绝
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/chaodikong/Android/codex/tests/test_leave_service.py", line 247, in test_approve_leave_conflict_with_approved_blocked
+    leave_service.approve_leave(leave_b.id, {'approver': '王经理'})
+AssertionError: ServiceError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+FAILED (failures=1)
+```
+
+## 绿灯：修复后
+
+```bash
+python3 -m unittest tests.test_leave_service -v
+```
+
+```
+Ran 24 tests in 0.054s
+
+OK
+```
+
+```bash
+python3 -m unittest discover -s tests
+```
+
+```
+Ran 77 tests in 0.158s
+
+OK
+```
+
+## 一键验收
+
+```bash
+bash scripts/verify.sh
+```
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  指尖打卡 2.0 · 一键验收
+  项目目录：/Users/chaodikong/Android/codex
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [1/5] 语法编译
+  [PASS] ✅ 通过  所有 Python 文件编译通过
+
+  [2/5] 代码风格
+  [PASS] ✅ 通过  所有代码行宽不超过 120 字符
+  [PASS] ✅ 通过  路由层没有直接写 SQL
+  [PASS] ✅ 通过  业务代码里没有遗留 print
+
+  [3/5] 单元测试
+         Ran 77 tests in 0.158s
+         OK
+  [PASS] ✅ 通过  单元测试全部通过
+
+  [4/5] 接口冒烟
+         通过 32 项，失败 0 项
+  [PASS] ✅ 通过  接口冒烟全部通过
+
+  [5/5] 页面可达性
+  [PASS] ✅ 通过  首页和静态资源全部可达（共 4 个）
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [PASS] 验收通过：全部检查项正常
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+## verify.sh 第一次运行时的失败
+
+写完 verify.sh 第一次跑，第 5 项失败了：
+
+```
+  [5/5] 页面可达性
+         /style.css 返回 HTTP 404
+         /app.js 返回 HTTP 404
+  [FAIL] ❌ 失败  存在无法访问的页面
+```
+
+原因：脚本里写死了旧的静态资源路径，实际已经是 `static/css/app.css` 和 `static/js/app.js`。
+改成从 `templates/index.html` 自动提取路径后通过。

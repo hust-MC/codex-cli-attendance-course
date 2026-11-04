@@ -8,16 +8,22 @@ from services.validators import clean_text, inclusive_days, parse_date, parse_po
 
 
 def _find_approved_overlap(conn, employee_id, start_date, end_date):
-    """查询与新区间重叠的已审批请假"""
+    """查询与新区间重叠的已审批请假
+
+    两个闭区间 [a1, a2] 和 [b1, b2] 重叠的条件是 a1 <= b2 且 a2 >= b1。
+    注意是「小于等于」而不是「小于」：已审批 11-18 到 11-20，
+    新申请 11-20 到 11-22 共享 11-20 这一天，属于首尾相接，不算冲突。
+    """
     row = conn.execute(
         '''
         SELECT id FROM leaves
         WHERE employee_id = ?
           AND status = 'approved'
-          AND NOT (end_date < ? OR start_date > ?)
+          AND start_date <= ?
+          AND end_date >= ?
         LIMIT 1
         ''',
-        (employee_id, start_date, end_date),
+        (employee_id, end_date, start_date),
     ).fetchone()
     return row is not None
 
@@ -130,6 +136,25 @@ def _review_leave(leave_id, payload, target_status):
 
     conn = get_db()
     try:
+        # 审批通过前必须复查冲突：
+        # 提交申请时如果还有另一条 pending 请假，两条都可以提交成功，
+        # 但先被审批的那条会变成 approved，此时后一条再审批就会造成区间重叠。
+        if target_status == 'approved':
+            conflict = conn.execute(
+                '''
+                SELECT id FROM leaves
+                WHERE employee_id = ?
+                  AND id != ?
+                  AND status = 'approved'
+                  AND start_date <= ?
+                  AND end_date >= ?
+                LIMIT 1
+                ''',
+                (leave.employee_id, leave.id, leave.end_date, leave.start_date),
+            ).fetchone()
+            if conflict is not None:
+                raise ServiceError('该请假申请与已审批的请假时间冲突，不能通过')
+
         conn.execute(
             '''
             UPDATE leaves
