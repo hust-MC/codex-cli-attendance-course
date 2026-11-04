@@ -1,0 +1,18 @@
+# 2.4 实际关键命令
+
+CHECKIN_DB_PATH=/tmp/codex-2-4-import.db python3 -c "from app import app; print(...)"
+PYTHONPYCACHEPREFIX=/tmp/codex-pycache python3 -m compileall -q app.py db.py models services routes
+awk 'length($0) > 120 {print FILENAME ":" FNR ":" length($0)}' app.py db.py models/*.py services/*.py routes/*.py
+rg -n 'SELECT|INSERT|UPDATE|DELETE' routes
+rm -f /tmp/codex-2-4.db
+CHECKIN_DB_PATH=/tmp/codex-2-4.db FLASK_DEBUG=0 python3 app.py
+curl -sS http://127.0.0.1:3000/api/health
+curl -X POST http://127.0.0.1:3000/api/employees
+curl http://127.0.0.1:3000/api/employees
+curl http://127.0.0.1:3000/api/employees/1
+curl -X PUT http://127.0.0.1:3000/api/employees/1
+curl -X POST http://127.0.0.1:3000/api/checkins/in
+curl -X POST http://127.0.0.1:3000/api/checkins/out
+curl 'http://127.0.0.1:3000/api/checkins?employee_id=1&date=2026-11-03'
+curl -X DELETE http://127.0.0.1:3000/api/employees/2
+sqlite3 /tmp/codex-2-4.db '.tables'

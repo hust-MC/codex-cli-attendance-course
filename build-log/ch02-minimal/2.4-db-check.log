@@ -1,0 +1,4 @@
+$ sqlite3 /tmp/codex-2-4.db .tables
+checkins   employees
+$ sqlite3 /tmp/codex-2-4.db "SELECT COUNT(*) FROM employees;"
+1

@@ -1,0 +1,12 @@
+本轮没有运行时失败记录。
+
+本轮的主要收获是规范与代码之间的漂移，已经逐条记录在 `consistency-check.md`：
+
+- `overtimes` 字段名：规范写 `date`，代码是 `work_date`。
+- 接口清单里第三章接口表和已实现接口表重复。
+- JS 规范写 `api_request()`，代码里函数名是 `request()`。
+- JS 规范写「优先使用 textContent」，代码实际统一用 `escapeHtml` 转义。
+- 目录职责表漏了 `templates/`。
+- Git 规范要求每个阶段提交，但工作区不是 Git 仓库。
+
+这六处都不是崩溃式 Bug，而是规范与实现不同步，属于第四章要讲的真实内容。

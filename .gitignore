@@ -1,0 +1,20 @@
+# Python 缓存
+__pycache__/
+*.py[cod]
+
+# 本地数据库
+checkin.db
+*.db
+
+# 环境与编辑器文件
+.env
+.DS_Store
+.idea/
+.vscode/
+
+# 历史归档项目，只在本地保留，不进仓库
+_archive/
+
+# 本地临时日志（build-log 里的记录要保留，不受影响）
+nohup.out
+*.local.log

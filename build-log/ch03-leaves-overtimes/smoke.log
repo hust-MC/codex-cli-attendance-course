@@ -1,0 +1,41 @@
+接口冒烟：真实请求与响应（临时数据库，不污染 checkin.db）
+服务端口 3101，数据库 $TMP/demo.db
+
+$ curl -s -X POST http://127.0.0.1:3101/api/employees -d {"name":"李四","department":"市场部","employee_no":"E1002"}
+{"code":200,"data":{"created_at":"2026-11-03 20:40:08","department":"市场部","employee_no":"E1002","id":1,"name":"李四","phone":null,"status":"active"},"message":"员工创建成功"}
+
+
+$ curl -s -X POST http://127.0.0.1:3101/api/leaves -d {"employee_id":1,"leave_type":"事假","start_date":"2026-11-05","end_date":"2026-11-06"}
+{"code":200,"data":{"approve_comment":null,"approver":null,"created_at":"2026-11-03 20:40:08","days":2,"employee_id":1,"end_date":"2026-11-06","id":1,"leave_type":"事假","reason":"陪同家人就医","start_date":"2026-11-05","status":"pending","updated_at":"2026-11-03 20:40:08"},"message":"请假申请已提交"}
+
+
+$ curl -s -X POST http://127.0.0.1:3101/api/leaves/1/approve -d {"approver":"人事主管"}
+{"code":200,"data":{"approve_comment":"同意","approver":"人事主管","created_at":"2026-11-03 20:40:08","days":2,"employee_id":1,"end_date":"2026-11-06","id":1,"leave_type":"事假","reason":"陪同家人就医","start_date":"2026-11-05","status":"approved","updated_at":"2026-11-03 20:40:08"},"message":"请假申请已通过"}
+
+
+$ curl -s -X POST http://127.0.0.1:3101/api/leaves/1/approve （重复审批）
+{"code":400,"data":null,"message":"该请假申请已经通过，不能重复处理"}
+
+
+$ curl -s -X POST http://127.0.0.1:3101/api/leaves （与已审批区间重叠）
+{"code":400,"data":null,"message":"该时间段与已审批的请假冲突"}
+
+
+$ curl -s -X POST http://127.0.0.1:3101/api/overtimes -d {"employee_id":1,"work_date":"2026-11-10","hours":3.5}
+{"code":200,"data":{"approve_comment":null,"approver":null,"created_at":"2026-11-03 20:40:08","employee_id":1,"hours":3.5,"id":1,"reason":"版本上线","status":"pending","updated_at":"2026-11-03 20:40:08","work_date":"2026-11-10"},"message":"加班申请已提交"}
+
+
+$ curl -s -X POST http://127.0.0.1:3101/api/overtimes -d {"employee_id":1,"work_date":"2026-11-10","hours":2} （同一天重复）
+{"code":400,"data":null,"message":"该员工当天已经提交过加班申请"}
+
+
+$ curl -s -X DELETE http://127.0.0.1:3101/api/employees/1 （离职）
+{"code":200,"data":{"created_at":"2026-11-03 20:40:08","department":"市场部","employee_no":"E1002","id":1,"name":"李四","phone":null,"status":"quit"},"message":"员工已删除"}
+
+
+$ curl -s -X POST http://127.0.0.1:3101/api/checkins/in -d {"employee_id":1} （离职后打卡）
+{"code":400,"data":null,"message":"员工已离职，不能打卡"}
+
+
+页面验收：浏览器打开 http://127.0.0.1:3101/ ，请假管理与加班管理两个面板正常渲染
+UI 操作验证：在请假面板点击「通过」，待审批数量由 2 变为 1，状态列变为「已通过」

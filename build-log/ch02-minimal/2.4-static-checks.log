@@ -1,0 +1,6 @@
+$ python3 -m compileall -q app.py db.py models services routes
+python-compile: ok
+$ awk line-length check
+line-length-check: no violations
+$ rg SQL in routes
+route-sql-check: no SQL in routes

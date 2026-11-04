@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#102c26">
+  <meta name="description" content="指尖打卡员工考勤工作台">
+  <title>指尖打卡 · 员工考勤系统</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="icon-grid" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="7" height="7" rx="2"></rect>
+      <rect x="14" y="3" width="7" height="7" rx="2"></rect>
+      <rect x="3" y="14" width="7" height="7" rx="2"></rect>
+      <rect x="14" y="14" width="7" height="7" rx="2"></rect>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+      <circle cx="9" cy="7" r="4"></circle>
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>
+    </symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"></circle>
+      <path d="M12 7v5l3 2"></path>
+    </symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24">
+      <path d="M12 5v14M5 12h14"></path>
+    </symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="7"></circle>
+      <path d="m20 20-4-4"></path>
+    </symbol>
+    <symbol id="icon-arrow" viewBox="0 0 24 24">
+      <path d="M5 12h14M13 6l6 6-6 6"></path>
+    </symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24">
+      <path d="m5 12 4 4L19 6"></path>
+    </symbol>
+    <symbol id="icon-edit" viewBox="0 0 24 24">
+      <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+    </symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24">
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v6M14 11v6"></path>
+    </symbol>
+    <symbol id="icon-menu" viewBox="0 0 24 24">
+      <path d="M4 7h16M4 12h16M4 17h16"></path>
+    </symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24">
+      <path d="M6 6l12 12M18 6 6 18"></path>
+    </symbol>
+    <symbol id="icon-calendar" viewBox="0 0 24 24">
+      <rect x="3" y="5" width="18" height="16" rx="3"></rect>
+      <path d="M16 3v4M8 3v4M3 10h18"></path>
+    </symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41
+        M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path>
+    </symbol>
+    <symbol id="icon-spark" viewBox="0 0 24 24">
+      <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z"></path>
+      <path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8Z"></path>
+    </symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24">
+      <path d="M20 7v5h-5M4 17v-5h5"></path>
+      <path d="M6.1 9a7 7 0 0 1 11.5-2L20 12M4 12l2.4 5a7 7 0 0 0 11.5-2"></path>
+    </symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24">
+      <path d="m7 10 5 5 5-5"></path>
+    </symbol>
+  </svg>
+
+  <div class="app-shell">
+    <div class="mobile-backdrop" id="mobileBackdrop" hidden></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">指</div>
+        <div>
+          <strong>指尖打卡</strong>
+          <span>ATTENDANCE OS</span>
+        </div>
+      </div>
+
+      <nav class="side-nav" aria-label="主导航">
+        <span class="nav-caption">工作台</span>
+        <a class="nav-link active" href="#overview" data-nav="overview">
+          <svg class="icon"><use href="#icon-grid"></use></svg>
+          <span>今日概览</span>
+          <span class="nav-dot"></span>
+        </a>
+        <a class="nav-link" href="#employees" data-nav="employees">
+          <svg class="icon"><use href="#icon-users"></use></svg>
+          <span>员工管理</span>
+        </a>
+        <a class="nav-link" href="#activity" data-nav="activity">
+          <svg class="icon"><use href="#icon-clock"></use></svg>
+          <span>打卡动态</span>
+          <span class="nav-count" id="navActivityCount">0</span>
+        </a>
+        <span class="nav-caption">申请与审批</span>
+        <a class="nav-link" href="#leaves" data-nav="leaves">
+          <svg class="icon"><use href="#icon-calendar"></use></svg>
+          <span>请假管理</span>
+          <span class="nav-count" id="navLeaveCount">0</span>
+        </a>
+        <a class="nav-link" href="#overtimes" data-nav="overtimes">
+          <svg class="icon"><use href="#icon-sun"></use></svg>
+          <span>加班管理</span>
+          <span class="nav-count" id="navOvertimeCount">0</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-note">
+        <div class="note-icon"><svg class="icon"><use href="#icon-spark"></use></svg></div>
+        <span class="note-label">今日提示</span>
+        <p id="sidebarHint">正在同步今日考勤数据…</p>
+      </div>
+      <div class="profile-card">
+        <div class="profile-avatar">HR</div>
+        <div class="profile-copy">
+          <strong>人事管理员</strong>
+          <span>本地演示模式</span>
+        </div>
+        <span class="online-dot" title="服务在线"></span>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button menu-button" id="menuButton" aria-label="打开导航">
+            <svg class="icon"><use href="#icon-menu"></use></svg>
+          </button>
+          <div>
+            <span class="eyebrow">PEOPLE OPERATIONS</span>
+            <h1>考勤工作台</h1>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="date-chip">
+            <svg class="icon"><use href="#icon-calendar"></use></svg>
+            <span id="headerDate">--</span>
+          </div>
+          <button class="primary-button" id="openEmployeeModal" type="button">
+            <svg class="icon"><use href="#icon-plus"></use></svg>
+            员工入职
+          </button>
+        </div>
+      </header>
+
+      <section class="hero-card" id="overview">
+        <div class="hero-copy">
+          <span class="hero-kicker"><span class="pulse-dot"></span> 今日考勤 · <span id="heroDate">--</span></span>
+          <h2>让每一次<br><em>打卡</em>，都清晰可见。</h2>
+          <p>员工、签到与签出数据在一处汇合。少一点表格搬运，多一点团队洞察。</p>
+          <div class="hero-actions">
+            <button class="light-button" type="button" data-quick-checkin="in">
+              <svg class="icon"><use href="#icon-check"></use></svg>
+              上班签到
+            </button>
+            <button class="ghost-light-button" type="button" data-quick-checkin="out">
+              <svg class="icon"><use href="#icon-arrow"></use></svg>
+              下班签出
+            </button>
+          </div>
+          <div class="hero-footnote">
+            <div class="mini-avatars" id="heroAvatars"></div>
+            <span id="heroFootnote">正在载入团队成员…</span>
+          </div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="glow glow-one"></div>
+          <div class="glow glow-two"></div>
+          <div class="orbit-ring" id="attendanceRing">
+            <div class="orbit-core">
+              <span id="attendanceRate">0%</span>
+              <small>今日签到率</small>
+            </div>
+          </div>
+          <div class="floating-card floating-card-top">
+            <span class="float-icon"><svg class="icon"><use href="#icon-sun"></use></svg></span>
+            <div><strong id="heroOnDuty">0</strong><span>人正在岗</span></div>
+          </div>
+          <div class="floating-card floating-card-bottom">
+            <span class="float-icon coral"><svg class="icon"><use href="#icon-clock"></use></svg></span>
+            <div><strong id="heroMissing">0</strong><span>人待签到</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stat-grid" aria-label="今日考勤概览">
+        <article class="stat-card">
+          <div class="stat-head">
+            <span class="stat-icon mint"><svg class="icon"><use href="#icon-users"></use></svg></span>
+            <span class="stat-trend">团队</span>
+          </div>
+          <strong id="statTotal">0</strong>
+          <span>员工总数</span>
+          <div class="stat-track"><i id="statTotalBar" style="width: 0%"></i></div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-head">
+            <span class="stat-icon blue"><svg class="icon"><use href="#icon-check"></use></svg></span>
+            <span class="stat-trend">TODAY</span>
+          </div>
+          <strong id="statCheckedIn">0</strong>
+          <span>今日已签到</span>
+          <div class="stat-track"><i id="statCheckedInBar" style="width: 0%"></i></div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-head">
+            <span class="stat-icon amber"><svg class="icon"><use href="#icon-sun"></use></svg></span>
+            <span class="stat-trend">LIVE</span>
+          </div>
+          <strong id="statOnDuty">0</strong>
+          <span>当前在岗</span>
+          <div class="stat-track"><i id="statOnDutyBar" style="width: 0%"></i></div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-head">
+            <span class="stat-icon coral"><svg class="icon"><use href="#icon-clock"></use></svg></span>
+            <span class="stat-trend">DONE</span>
+          </div>
+          <strong id="statCompleted">0</strong>
+          <span>已完成签出</span>
+          <div class="stat-track"><i id="statCompletedBar" style="width: 0%"></i></div>
+        </article>
+      </section>
+
+      <div class="content-grid">
+        <section class="panel employee-panel" id="employees">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">TEAM DIRECTORY</span>
+              <h2>员工与今日考勤</h2>
+              <p>查看状态、发起签到签出，或维护员工档案。</p>
+            </div>
+            <button class="soft-button" id="refreshButton" type="button">
+              <svg class="icon"><use href="#icon-refresh"></use></svg>
+              刷新
+            </button>
+          </div>
+
+          <div class="toolbar">
+            <label class="search-box">
+              <svg class="icon"><use href="#icon-search"></use></svg>
+              <input id="searchInput" type="search" placeholder="搜索姓名或工号" autocomplete="off">
+            </label>
+            <label class="select-box">
+              <select id="departmentFilter" aria-label="按部门筛选">
+                <option value="">全部部门</option>
+              </select>
+              <svg class="icon"><use href="#icon-chevron"></use></svg>
+            </label>
+          </div>
+
+          <div class="table-wrap">
+            <table class="employee-table">
+              <thead>
+                <tr>
+                  <th>员工</th>
+                  <th>部门</th>
+                  <th>签到</th>
+                  <th>签出</th>
+                  <th>今日状态</th>
+                  <th class="align-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="employeeTableBody">
+                <tr class="loading-row">
+                  <td colspan="6"><span class="loader"></span> 正在载入员工数据…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <span id="tableSummary">共 0 位员工</span>
+            <span class="table-legend">
+              <i class="legend-dot online"></i> 在岗
+              <i class="legend-dot done"></i> 已签出
+            </span>
+          </div>
+        </section>
+
+        <aside class="panel activity-panel" id="activity">
+          <div class="panel-heading compact">
+            <div>
+              <span class="eyebrow">LIVE FEED</span>
+              <h2>今日动态</h2>
+            </div>
+            <span class="count-badge" id="activityCount">0 条</span>
+          </div>
+          <div class="activity-list" id="activityList">
+            <div class="empty-compact">
+              <span class="empty-ring"><svg class="icon"><use href="#icon-clock"></use></svg></span>
+              <p>今日还没有打卡记录</p>
+              <span>完成第一次签到后会显示在这里</span>
+            </div>
+          </div>
+          <div class="tip-card">
+            <span class="tip-badge">TIP</span>
+            <p>每天每人只记录一次签到和签出，界面会自动拦截重复操作。</p>
+          </div>
+        </aside>
+      </div>
+
+      <section class="application-grid" id="leaves">
+        <div class="panel application-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">LEAVE REQUEST</span>
+              <h2>请假管理</h2>
+            </div>
+            <div class="heading-actions">
+              <select id="leaveStatusFilter" class="native-select compact" aria-label="请假状态筛选">
+                <option value="">全部状态</option>
+                <option value="pending">待审批</option>
+                <option value="approved">已通过</option>
+                <option value="rejected">已驳回</option>
+              </select>
+              <button class="soft-button" id="openLeaveModal" type="button">
+                <svg class="icon"><use href="#icon-plus"></use></svg>
+                提交请假
+              </button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="application-table">
+              <thead>
+                <tr>
+                  <th>员工</th>
+                  <th>类型</th>
+                  <th>日期区间</th>
+                  <th>天数</th>
+                  <th>状态</th>
+                  <th class="align-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="leaveTableBody">
+                <tr class="loading-row">
+                  <td colspan="6"><span class="loader"></span> 正在载入请假数据…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <span id="leaveSummary">共 0 条请假申请</span>
+          </div>
+        </div>
+
+        <div class="panel application-panel" id="overtimes">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">OVERTIME</span>
+              <h2>加班管理</h2>
+            </div>
+            <div class="heading-actions">
+              <select id="overtimeStatusFilter" class="native-select compact" aria-label="加班状态筛选">
+                <option value="">全部状态</option>
+                <option value="pending">待审批</option>
+                <option value="approved">已通过</option>
+                <option value="rejected">已驳回</option>
+              </select>
+              <button class="soft-button" id="openOvertimeModal" type="button">
+                <svg class="icon"><use href="#icon-plus"></use></svg>
+                提交加班
+              </button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="application-table">
+              <thead>
+                <tr>
+                  <th>员工</th>
+                  <th>加班日期</th>
+                  <th>时长</th>
+                  <th>原因</th>
+                  <th>状态</th>
+                  <th class="align-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="overtimeTableBody">
+                <tr class="loading-row">
+                  <td colspan="6"><span class="loader"></span> 正在载入加班数据…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <span id="overtimeSummary">共 0 条加班申请</span>
+          </div>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        <span>指尖打卡 · Attendance OS</span>
+        <span>Flask + SQLite · 用 Codex CLI 构建</span>
+      </footer>
+    </main>
+  </div>
+
+  <div class="modal-layer" id="employeeModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="employeeModalTitle">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">TEAM PROFILE</span>
+          <h3 id="employeeModalTitle">新增员工</h3>
+        </div>
+        <button class="icon-button" type="button" data-close-modal="employeeModal" aria-label="关闭">
+          <svg class="icon"><use href="#icon-close"></use></svg>
+        </button>
+      </div>
+      <form id="employeeForm" novalidate>
+        <input id="employeeId" type="hidden">
+        <div class="form-grid">
+          <label class="form-field">
+            <span>员工姓名</span>
+            <input id="employeeName" name="name" type="text" maxlength="50" placeholder="例如：林晓" required>
+          </label>
+          <label class="form-field">
+            <span>员工工号</span>
+            <input id="employeeNo" name="employee_no" type="text" maxlength="30" placeholder="例如：E1001" required>
+          </label>
+          <label class="form-field full">
+            <span>所属部门</span>
+            <input id="employeeDepartment" name="department" type="text" maxlength="50"
+              placeholder="例如：产品设计部" list="departmentOptions" required>
+            <datalist id="departmentOptions"></datalist>
+          </label>
+        </div>
+        <p class="form-hint">工号在系统中必须唯一，保存后即可参与今日打卡。</p>
+        <div class="modal-actions">
+          <button class="text-button" type="button" data-close-modal="employeeModal">取消</button>
+          <button class="primary-button" id="employeeSubmitButton" type="submit">保存员工</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-layer" id="checkinModal" hidden>
+    <div class="modal-card checkin-modal-card" role="dialog" aria-modal="true" aria-labelledby="checkinModalTitle">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">QUICK CHECK-IN</span>
+          <h3 id="checkinModalTitle">打卡登记</h3>
+        </div>
+        <button class="icon-button" type="button" data-close-modal="checkinModal" aria-label="关闭">
+          <svg class="icon"><use href="#icon-close"></use></svg>
+        </button>
+      </div>
+      <div class="checkin-segment" role="group" aria-label="打卡类型">
+        <button class="segment-button active" type="button" data-checkin-type="in">上班签到</button>
+        <button class="segment-button" type="button" data-checkin-type="out">下班签出</button>
+      </div>
+      <label class="form-field">
+        <span>选择员工</span>
+        <select id="checkinEmployee" class="native-select"></select>
+      </label>
+      <div class="live-clock-card">
+        <div class="live-clock-icon"><svg class="icon"><use href="#icon-clock"></use></svg></div>
+        <div>
+          <span>将记录当前时间</span>
+          <strong id="liveClock">--:--:--</strong>
+        </div>
+        <span class="live-pill"><i></i> LIVE</span>
+      </div>
+      <p class="checkin-hint" id="checkinHint">请选择员工后确认打卡。</p>
+      <div class="modal-actions">
+        <button class="text-button" type="button" data-close-modal="checkinModal">取消</button>
+        <button class="primary-button" id="checkinSubmitButton" type="button">确认签到</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-layer" id="deleteModal" hidden>
+    <div class="modal-card delete-modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+      <div class="danger-icon"><svg class="icon"><use href="#icon-trash"></use></svg></div>
+      <h3 id="deleteModalTitle">员工离职</h3>
+      <p>
+        确定要让 <strong id="deleteEmployeeName">该员工</strong> 离职吗？
+        离职后保留历史考勤记录，但不能再打卡或提交申请。
+      </p>
+      <div class="modal-actions">
+        <button class="text-button" type="button" data-close-modal="deleteModal">取消</button>
+        <button class="danger-button" id="deleteSubmitButton" type="button">确认离职</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-layer" id="leaveModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="leaveModalTitle">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">LEAVE REQUEST</span>
+          <h3 id="leaveModalTitle">提交请假</h3>
+        </div>
+        <button class="icon-button" type="button" data-close-modal="leaveModal" aria-label="关闭">
+          <svg class="icon"><use href="#icon-close"></use></svg>
+        </button>
+      </div>
+      <form id="leaveForm" novalidate>
+        <div class="form-grid">
+          <label class="form-field full">
+            <span>请假员工</span>
+            <select id="leaveEmployee" class="native-select"></select>
+          </label>
+          <label class="form-field">
+            <span>请假类型</span>
+            <select id="leaveType" class="native-select">
+              <option value="年假">年假</option>
+              <option value="事假">事假</option>
+              <option value="病假">病假</option>
+              <option value="调休">调休</option>
+            </select>
+          </label>
+          <label class="form-field">
+            <span>请假天数</span>
+            <input id="leaveDays" type="text" readonly value="自动计算">
+          </label>
+          <label class="form-field">
+            <span>开始日期</span>
+            <input id="leaveStartDate" type="date" required>
+          </label>
+          <label class="form-field">
+            <span>结束日期</span>
+            <input id="leaveEndDate" type="date" required>
+          </label>
+          <label class="form-field full">
+            <span>请假原因</span>
+            <textarea id="leaveReason" rows="3" maxlength="200"
+              placeholder="例如：家中有事，提前报备"></textarea>
+          </label>
+        </div>
+        <p class="form-hint">开始日期和结束日期都会自动带上，提交后进入主管审批。</p>
+        <div class="modal-actions">
+          <button class="text-button" type="button" data-close-modal="leaveModal">取消</button>
+          <button class="primary-button" id="leaveSubmitButton" type="submit">提交申请</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-layer" id="overtimeModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="overtimeModalTitle">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">OVERTIME</span>
+          <h3 id="overtimeModalTitle">提交加班</h3>
+        </div>
+        <button class="icon-button" type="button" data-close-modal="overtimeModal" aria-label="关闭">
+          <svg class="icon"><use href="#icon-close"></use></svg>
+        </button>
+      </div>
+      <form id="overtimeForm" novalidate>
+        <div class="form-grid">
+          <label class="form-field full">
+            <span>加班员工</span>
+            <select id="overtimeEmployee" class="native-select"></select>
+          </label>
+          <label class="form-field">
+            <span>加班日期</span>
+            <input id="overtimeDate" type="date" required>
+          </label>
+          <label class="form-field">
+            <span>加班时长（小时）</span>
+            <input id="overtimeHours" type="number" min="0.5" max="24" step="0.5" value="2" required>
+          </label>
+          <label class="form-field full">
+            <span>加班原因</span>
+            <textarea id="overtimeReason" rows="3" maxlength="200"
+              placeholder="例如：版本上线支持"></textarea>
+          </label>
+        </div>
+        <p class="form-hint">加班时长必须大于 0 且不超过 24 小时，同一天不能重复提交。</p>
+        <div class="modal-actions">
+          <button class="text-button" type="button" data-close-modal="overtimeModal">取消</button>
+          <button class="primary-button" id="overtimeSubmitButton" type="submit">提交申请</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</body>
+</html>

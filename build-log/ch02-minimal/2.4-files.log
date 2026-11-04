@@ -1,0 +1,21 @@
+# 2.4 实际创建文件
+
+- app.py
+- db.py
+- requirements.txt
+- .gitignore
+- models/__init__.py
+- models/employee.py
+- models/checkin.py
+- services/__init__.py
+- services/errors.py
+- services/employee_service.py
+- services/checkin_service.py
+- routes/__init__.py
+- routes/common.py
+- routes/employees.py
+- routes/checkins.py
+- build-log/ch02-minimal/2.4-prompt.md
+- build-log/ch02-minimal/2.4-curl.log
+- build-log/ch02-minimal/2.4-static-checks.log
+- build-log/ch02-minimal/2.4-db-check.log

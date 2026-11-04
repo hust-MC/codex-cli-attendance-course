@@ -1,0 +1,8 @@
+$ python3 -m compileall -q app.py db.py models services routes
+编译通过，无输出
+
+$ awk 'length>120' 检查 Python 代码行宽
+无输出表示全部不超过 120 字符
+
+$ grep -rn 'SELECT\|INSERT\|UPDATE\|DELETE' routes/
+routes/ 目录没有 SQL 关键字

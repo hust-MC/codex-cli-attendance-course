@@ -1,0 +1,48 @@
+# 本轮实际执行的关键命令
+
+## 开发与自测
+
+```bash
+# 冒烟脚本：临时数据库 + 临时端口跑 26 项接口
+bash scripts/smoke-api.sh
+
+# 静态检查
+python3 -m compileall -q app.py db.py models services routes
+awk 'length>120 {print FILENAME":"FNR}' app.py db.py models/*.py services/*.py routes/*.py
+grep -rn 'SELECT\|INSERT\|UPDATE\|DELETE' routes/
+
+# 起服务看真实页面
+python3 app.py
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/
+```
+
+## 手工接口验证（开发过程中用）
+
+```bash
+curl -s -X POST http://127.0.0.1:3000/api/employees -H 'Content-Type: application/json' \
+  -d '{"name":"张三","department":"研发部","employee_no":"E1001","phone":"13800000000"}'
+
+curl -s -X POST http://127.0.0.1:3000/api/leaves -H 'Content-Type: application/json' \
+  -d '{"employee_id":1,"leave_type":"年假","start_date":"2026-11-05","end_date":"2026-11-06"}'
+
+curl -s -X POST http://127.0.0.1:3000/api/leaves/1/approve -H 'Content-Type: application/json' \
+  -d '{"approver":"王经理","comment":"同意"}'
+
+curl -s -X POST http://127.0.0.1:3000/api/overtimes -H 'Content-Type: application/json' \
+  -d '{"employee_id":1,"work_date":"2026-11-10","hours":3.5,"reason":"版本上线"}'
+
+curl -s -X DELETE http://127.0.0.1:3000/api/employees/1
+```
+
+## 真实报错复现
+
+```bash
+# 审批接口 500（改签名忘改调用点）
+curl -s -X POST http://127.0.0.1:3000/api/leaves/1/approve -H 'Content-Type: application/json' \
+  -d '{"approver":"王经理"}'
+# 页面返回 Werkzeug 调试页，标题：TypeError: _review_leave() takes 3 positional arguments but 4 were given
+
+# 冒烟脚本启动失败：Address already in use
+bash scripts/smoke-api.sh
+# 原因：app.py 把端口写死 3000，改为读取 PORT 环境变量后解决
+```
