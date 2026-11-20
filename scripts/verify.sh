@@ -2,7 +2,7 @@
 # ============================================================
 # verify.sh — 一键验收脚本
 #
-# 依次执行：静态检查 -> 单元测试 -> 接口冒烟 -> 页面可达性
+# 依次执行：静态检查 -> 单元测试 -> 接口冒烟 -> 页面可达性 -> MCP 服务器
 # 任何一步失败立即退出，退出码非 0 表示验收未通过
 #
 # 用法：
@@ -49,7 +49,7 @@ record() {
 # 检查项 1：Python 语法编译
 # ----------------------------
 check_compile() {
-    echo "  ${BOLD}[1/5] 语法编译${RESET}"
+    echo "  ${BOLD}[1/6] 语法编译${RESET}"
     if python3 -m compileall -q app.py db.py models services routes tests scripts > /dev/null 2>&1; then
         record pass "所有 Python 文件编译通过"
     else
@@ -62,7 +62,7 @@ check_compile() {
 # 检查项 2：代码风格
 # ----------------------------
 check_style() {
-    echo "  ${BOLD}[2/5] 代码风格${RESET}"
+    echo "  ${BOLD}[2/6] 代码风格${RESET}"
 
     # 行宽不超过 120 字符
     local long_files
@@ -100,7 +100,7 @@ check_style() {
 # 检查项 3：单元测试
 # ----------------------------
 check_unit_tests() {
-    echo "  ${BOLD}[3/5] 单元测试${RESET}"
+    echo "  ${BOLD}[3/6] 单元测试${RESET}"
     local output
     output=$(python3 -m unittest discover -s tests -v 2>&1)
     local exit_code=$?
@@ -120,7 +120,7 @@ check_unit_tests() {
 # 检查项 4：接口冒烟
 # ----------------------------
 check_smoke() {
-    echo "  ${BOLD}[4/5] 接口冒烟${RESET}"
+    echo "  ${BOLD}[4/6] 接口冒烟${RESET}"
     local output
     output=$(bash scripts/smoke-api.sh 2>&1)
     local exit_code=$?
@@ -139,7 +139,7 @@ check_smoke() {
 # 检查项 5：页面可达性
 # ----------------------------
 check_pages() {
-    echo "  ${BOLD}[5/5] 页面可达性${RESET}"
+    echo "  ${BOLD}[5/6] 页面可达性${RESET}"
 
     # 用临时端口和临时数据库启动服务，检查完立即关掉
     local port=3999
@@ -198,6 +198,29 @@ check_pages() {
     rm -f "$db_file"
 }
 
+# ----------------------------
+# 检查项 6：MCP 服务器冒烟
+#
+# 这一项是第六章新增的。
+# MCP 服务器的协议层问题用 codex exec 排查很慢，
+# 所以单独写了一个手工 JSON-RPC 探针脚本，直接跑。
+# ----------------------------
+check_mcp() {
+    echo "  ${BOLD}[6/6] MCP 服务器${RESET}"
+    local output
+    output=$(bash scripts/test-mcp.sh 2>&1)
+    local exit_code=$?
+
+    echo "$output" | grep -E "^  通过：" | sed 's/^/         /'
+
+    if [ $exit_code -eq 0 ]; then
+        record pass "MCP 服务器协议与业务检查全部通过"
+    else
+        record fail "MCP 服务器存在失败项"
+        echo "$output" | grep -E "\[FAIL\]" | head -10 | sed 's/^/         /'
+    fi
+}
+
 main() {
     print_divider
     echo "  ${BOLD}指尖打卡 2.0 · 一键验收${RESET}"
@@ -214,6 +237,8 @@ main() {
     check_smoke
     echo ""
     check_pages
+    echo ""
+    check_mcp
     echo ""
 
     print_divider
