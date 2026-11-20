@@ -70,6 +70,7 @@
 - SQLite 3，使用 Python 标准库 `sqlite3`。
 - 原生 HTML、CSS、JavaScript。
 - Python 标准库 `unittest`。
+- Node.js 24+，第六章起用于 MCP 服务器，只用内置模块，不装 npm 包。
 - Git 用于阶段快照和差异对比。
 
 ### 技术约束
@@ -78,25 +79,28 @@
 - 不修改 `requirements.txt` 中已有依赖的版本。
 - 测试和演示必须可以在本机离线运行。
 - 默认端口为 `3000`，默认数据库为项目根目录下的 `checkin.db`。
+- MCP 服务器一律只读打开数据库，且 stdout 只输出 JSON-RPC，日志走 stderr。
 
 ### 常用命令
 
 ```bash
 pip install -r requirements.txt
 python3 app.py
-bash scripts/seed-demo.py            # 重置并写入固定演示数据
+python3 scripts/seed-demo.py         # 重置并写入固定演示数据
 bash scripts/smoke-api.sh            # 接口冒烟
 python3 -m unittest discover -s tests -v
+bash scripts/test-mcp.sh             # MCP 服务器协议与业务检查
 bash scripts/verify.sh               # 一键验收
 ```
 
 其中 `scripts/smoke-api.sh` 是接口冒烟脚本，使用临时数据库和临时端口。
-`scripts/verify.sh` 依次执行语法编译、代码风格、单元测试、接口冒烟和页面可达性五组检查。
+`scripts/test-mcp.sh` 是 MCP 服务器的协议与业务检查，用手工 JSON-RPC 探针直接测服务器，不经过 Codex。
+`scripts/verify.sh` 依次执行语法编译、代码风格、单元测试、接口冒烟、页面可达性和 MCP 服务器六组检查。
 `scripts/seed-demo.py` 生成固定演示数据，避免录制时因历史数据导致结果漂移。
 
 ## 4. 目录规范
 
-以下是本项目完成后的目标结构。当前工作区已经有 `models/`、`services/`、`routes/`、`static/`、`scripts/` 和 `build-log/`，`tests/` 属于第五章，`templates/` 用于服务端渲染页面。
+以下是本项目完成后的目标结构。当前工作区已经有 `models/`、`services/`、`routes/`、`static/`、`scripts/` 和 `build-log/`，`tests/` 属于第五章，`templates/` 用于服务端渲染页面，`mcp/` 和 `.codex/` 属于第六章。
 
 ```text
 .
@@ -111,6 +115,8 @@ bash scripts/verify.sh               # 一键验收
 ├── static/                 # 原生前端页面、样式和脚本
 ├── tests/                  # 单元测试和接口测试
 ├── scripts/                # 验收、演示数据和自动化脚本
+├── mcp/                    # MCP 服务器、配置模板和演示数据
+├── .codex/skills/          # 项目级 Skill
 ├── course/                 # 课程设计、讲义和录制素材
 └── build-log/              # 真实开发过程归档
 ```
@@ -127,6 +133,8 @@ bash scripts/verify.sh               # 一键验收
 | `static/` | 页面、样式和浏览器交互 | 禁止把业务规则只写在前端 |
 | `tests/` | 自动化测试和测试辅助工具 | 禁止连接正式数据库 |
 | `scripts/` | 固定演示数据、验收和自动化任务 | 禁止绕过 service 直接改业务数据 |
+| `mcp/` | MCP 服务器、配置模板、外部工具演示数据 | 禁止以写模式打开数据库，禁止往 stdout 打日志 |
+| `.codex/skills/` | 项目级 Skill，规定专项任务的执行口径 | 禁止与 `AGENTS.md` 冲突，禁止写入密钥 |
 | `build-log/` | 保存真实开发过程 | 禁止补写虚构 Prompt 或测试结果 |
 
 ## 5. 分层与调用规则
@@ -339,6 +347,22 @@ open -> appealed -> approved
 - `rejected`：申诉驳回，异常维持。
 - 只有 `open` 可以申诉，只有 `appealed` 可以审批。
 - 日核算重复执行必须幂等，不能覆盖已经进入申诉流程的异常状态。
+
+### 考勤巡检口径
+
+以下口径属于第六章，已经由 `mcp/attendance-server/server.js` 固化在工具里，
+第六章之后的任何巡检都必须复用这些口径，不得另起一套。
+
+- **缺下班卡**：某员工当天有 `check_type = 'in'` 的打卡，但没有 `check_type = 'out'`。
+  既没有上班卡也没有下班卡的员工属于"缺勤"，不属于"缺下班卡"，
+  缺勤由第七章日核算负责。
+- **待审批请假**：`leaves.status = 'pending'` 的申请。
+- **重复打卡**：同一员工、同一天、同一打卡类型出现多条记录。
+  由于唯一索引在写入阶段已经拦截，正常情况恒为 0 条。
+  0 条的含义是"约束生效"，不是"没查到问题"。
+- **默认日期**：查询日期不指定时，取数据库里最新的打卡日期，
+  不使用系统当天日期，避免演示数据固定而结果漂移。
+- **结果限量**：每次查询默认最多 50 条，硬上限 200 条。
 
 ### 演示数据
 
